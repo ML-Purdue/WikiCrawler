@@ -14,14 +14,18 @@ import config.Config;
 public class Main {
 
 	public static void main(String[] args) {
-		Scanner scan = new Scanner(System.in);		
-		System.out.println("Start Link: ");
-		String start = scan.nextLine();
-		System.out.println("End Link: ");
-		String end = scan.nextLine();
-		startSearch(start, end);
+		if(Config.DEBUG){
+			startSearch(Config.DEBUG_START_URL, Config.DEBUG_END_URL);
+		}else{
+			Scanner scan = new Scanner(System.in);		
+			System.out.println("Start Link: ");
+			String start = scan.nextLine();
+			System.out.println("End Link: ");
+			String end = scan.nextLine();
+			startSearch(start, end);
+		}
 	}
-	
+
 	public static void startSearch(String start, String end)
 	{
 		Document doc = null;
@@ -33,14 +37,14 @@ public class Main {
 		}
 		Elements links = doc.select("a");
 		ArrayList<String> URL = new ArrayList<String>();
-		
+
 		for (Element link : links)
 		{
 			URL.add(link.absUrl("href"));
 		}
 		sanitizeLinks(URL);
 	}
-	
+
 	public static void sanitizeLinks(ArrayList<String> links){
 		for (int i = 0; i < links.size(); i++){
 			if (!links.get(i).startsWith(Config.BASE_URL)){
