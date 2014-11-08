@@ -4,10 +4,13 @@ public class Tile {
 	Tile parent;
 	String url;
 	int cost;
+	boolean visited;
+	
 	public Tile(String url, Tile parent, int cost) {
 		this.url = url;
 		this.parent = parent;
 		this.cost=cost;
+		visited=false;
 	}
 
 	public String getUrl() {
@@ -16,6 +19,18 @@ public class Tile {
 
 	public Tile getParent() {
 		return parent;
+	}
+	
+	public boolean isVisited(){
+		synchronized(this){
+			return visited;
+		}
+	}
+	
+	public void setVisited(){
+		synchronized(this){
+			visited=true;
+		}
 	}
 
 	public int getCost(){

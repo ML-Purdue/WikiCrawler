@@ -2,9 +2,9 @@ package runner;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.Scanner;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -15,19 +15,32 @@ import config.Config;
 
 public class Main {
 
+	static TileList tileList=new TileList();
+	static Tile curTile;
 	public static void main(String[] args) {
-		Tile goal;
+		String end;
 		if(Config.DEBUG){
-			goal=startSearch(Config.DEBUG_START_URL, Config.DEBUG_END_URL);
+			tileList.add(new Tile(Config.DEBUG_START_URL,null,0));
+			end=Config.DEBUG_END_URL;
+
 		}else{
 			Scanner scan = new Scanner(System.in);		
 			System.out.println("Start Link: ");
 			String start = scan.nextLine();
+			tileList.add(new Tile(start,null,0));
 			System.out.println("End Link: ");
-			String end = scan.nextLine();
-			goal=startSearch(start, end);
+			end = scan.nextLine();
 		}
-		Tile curTile=goal;
+		setupFirstPage();
+		ExecutorService executorService = Executors.newFixedThreadPool(10);
+		for(int i=0;i<10;i++)
+			executorService.execute(new Runnable() {
+				public void run() {
+					curTile=startSearch(end);
+				}
+			});
+
+		executorService.shutdown();
 		System.out.println("FOUND!!!");
 		while(curTile!=null)
 		{
@@ -36,13 +49,22 @@ public class Main {
 		}
 	}
 
-	public static Tile startSearch(String start, String end)
+	private static void setupFirstPage() {
+		Tile tile=tileList.next();
+		System.out.println(Thread.currentThread().getId()+": "+tile.getUrl());
+		Document doc = getDocument(tile.getUrl());
+		ArrayList<String> tempURLs=getURLsFromDocument(doc);
+		sanitizeLinks(tempURLs);
+		tileList.addAll(generateTiles(tile,tempURLs));		
+	}
+
+	public static Tile startSearch(String end)
 	{	
-		TileList tiles=new TileList();
-		tiles.add(new Tile(start,null,0));
-		for(int i=0;i<tiles.size();i++){
-			Tile tile=tiles.get(i);
+		Tile tile;
+		while((tile=tileList.next())!=null){
+			System.out.println(Thread.currentThread().getId()+": "+tile.getUrl());
 			if(tile.getUrl().equals(end)){
+				System.out.println(Thread.currentThread().getId()+" found it!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 				return tile;
 			}else{
 				Document doc = getDocument(tile.getUrl());
@@ -50,7 +72,7 @@ public class Main {
 					continue;
 				ArrayList<String> tempURLs=getURLsFromDocument(doc);
 				sanitizeLinks(tempURLs);
-				tiles.addAll(generateTiles(tile,tempURLs));
+				tileList.addAll(generateTiles(tile,tempURLs));
 			}
 		}
 		return null;
