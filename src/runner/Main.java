@@ -7,6 +7,7 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Scanner;
 import java.util.Set;
+import java.util.concurrent.BlockingQueue;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -63,13 +64,14 @@ public class Main {
 		
 		Page endPage = null;
 		
-		Queue<Page> pages = instance.getQueue("pages");
+		BlockingQueue<Page> pages = instance.getQueue("pages");
 		Page startPage = new Page(start);
 		visitedLinks.add(start);
 		pages.add(startPage);
 		while (!pages.isEmpty()) {
 			Page page = pages.remove();
 			System.out.println(page.getUrl());
+			
 			if (page.getUrl().equals(end)) {
 				endPage = page;
 				break;
@@ -89,7 +91,7 @@ public class Main {
 			
 			for (Element link : links) {
 				String url = link.absUrl("href");
-				if (url.startsWith(config.Config.BASE_URL) && !url.contains("User") && !url.contains("#cite_")) {
+				if (url.startsWith(config.Config.BASE_URL) && !url.contains("User") && !url.contains("#")) {
 					urls.add(url);
 				}
 			}
