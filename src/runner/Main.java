@@ -6,19 +6,23 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Scanner;
+import java.util.Set;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import config.Config;
+import com.hazelcast.config.Config;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+
 
 public class Main {
 
 	public static void main(String[] args) {
-		if(Config.DEBUG){
-			startSearch(Config.DEBUG_START_URL, Config.DEBUG_END_URL);
+		if(config.Config.DEBUG){
+			startSearch(config.Config.DEBUG_START_URL, config.Config.DEBUG_END_URL);
 		}else{
 			Scanner scan = new Scanner(System.in);		
 			System.out.println("Start Link: ");
@@ -48,19 +52,24 @@ public class Main {
 //		}
 //		sanitizeLinks(URL);
 		
+		// HazelCast stuff
+		Config cfg = new Config();
+		HazelcastInstance instance = Hazelcast.newHazelcastInstance(cfg);
+		
+		
 		long startTime = System.currentTimeMillis();
 		
-		HashSet<String> visitedLinks = new HashSet<String>();
+		Set<String> visitedLinks = instance.getSet("visitedLinks");
 		
 		Page endPage = null;
 		
-		Queue<Page> pages = new LinkedList<Page>();
+		Queue<Page> pages = instance.getQueue("pages");
 		Page startPage = new Page(start);
 		visitedLinks.add(start);
 		pages.add(startPage);
 		while (!pages.isEmpty()) {
 			Page page = pages.remove();
-			
+			System.out.println(page.getUrl());
 			if (page.getUrl().equals(end)) {
 				endPage = page;
 				break;
@@ -80,10 +89,11 @@ public class Main {
 			
 			for (Element link : links) {
 				String url = link.absUrl("href");
-				if (url.startsWith(Config.BASE_URL) && !url.contains("User") && !url.contains("#cite_")) {
+				if (url.startsWith(config.Config.BASE_URL) && !url.contains("User") && !url.contains("#cite_")) {
 					urls.add(url);
 				}
 			}
+			boolean found = false;
 			for (String url : urls) {
 				if (!visitedLinks.contains(url)) {
 					//System.out.println(url);
@@ -91,7 +101,15 @@ public class Main {
 					Page nextPage = new Page(url);
 					nextPage.setParent(page);
 					pages.add(nextPage);
+					if (nextPage.getUrl().equals(end)) {
+						endPage = nextPage;
+						found = true;
+						break;
+					}
 				}
+			}
+			if (found) {
+				break;
 			}
 			//System.out.println(page.getUrl() + ": " + urls.size());
 			

@@ -1,6 +1,8 @@
 package runner;
 
-public class Page {
+import java.io.Serializable;
+
+public class Page implements Serializable {
 	private Page parent;
 	private String url;
 	
