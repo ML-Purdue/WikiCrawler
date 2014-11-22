@@ -1,10 +1,9 @@
 package runner;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.Queue;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
@@ -15,6 +14,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.FileSystemXmlConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 
@@ -54,7 +54,14 @@ public class Main {
 //		sanitizeLinks(URL);
 		
 		// HazelCast stuff
-		Config cfg = new Config();
+		Config cfg = null;
+		try {
+			cfg = new FileSystemXmlConfig("../test_config.xml");
+		} catch (FileNotFoundException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		//cfg.setProperty("hazelcast.initial.min.cluster.size", "3");
 		HazelcastInstance instance = Hazelcast.newHazelcastInstance(cfg);
 		
 		
@@ -96,13 +103,15 @@ public class Main {
 				}
 			}
 			boolean found = false;
+			// To add all the pages at once
+			ArrayList<Page> linkedPages = new ArrayList<Page>();
 			for (String url : urls) {
 				if (!visitedLinks.contains(url)) {
 					//System.out.println(url);
 					visitedLinks.add(url);
 					Page nextPage = new Page(url);
 					nextPage.setParent(page);
-					pages.add(nextPage);
+					linkedPages.add(nextPage);
 					if (nextPage.getUrl().equals(end)) {
 						endPage = nextPage;
 						found = true;
@@ -113,6 +122,9 @@ public class Main {
 			if (found) {
 				break;
 			}
+			
+			// Add all the pages in one go
+			pages.addAll(linkedPages);
 			//System.out.println(page.getUrl() + ": " + urls.size());
 			
 		}
